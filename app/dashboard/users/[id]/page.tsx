@@ -91,7 +91,7 @@ export default async function UserEditPage({ params }: UserEditPageProps) {
   const { data: teams } = await query
 
   return (
-    <div className="space-y-6 py-6">
+    <div className="space-y-6 py-6 px-4 lg:px-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Edit User</h1>
         <p className="text-muted-foreground">Update user information and permissions</p>

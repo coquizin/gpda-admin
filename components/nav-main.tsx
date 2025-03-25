@@ -30,7 +30,7 @@ export function NavMain({
               className="min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
             >
               <PlusCircleIcon />
-              <span>Quick Create</span>
+              <span>Quick Invite</span>
             </SidebarMenuButton>
             <Button
               size="icon"
@@ -45,9 +45,11 @@ export function NavMain({
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton tooltip={item.title}>
+              <SidebarMenuButton tooltip={item.title} asChild>
+              <a href={item.url}>
                 {item.icon && <item.icon />}
                 <span>{item.title}</span>
+              </a>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}

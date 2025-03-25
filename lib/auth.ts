@@ -129,6 +129,12 @@ export async function getActiveTeam() {
   const cookieStore = cookies()
   const selectedTeamId = (await cookieStore).get("selectedTeamId")?.value
   if (!selectedTeamId) {
+    const teams = await getUserTeams()
+    if (teams.length > 0) {
+      const team = teams[0]
+      const cookieStore = await cookies()
+      return team
+    }
     return null
   }
 

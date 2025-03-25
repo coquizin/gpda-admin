@@ -1,9 +1,11 @@
 import type React from "react"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
-import { getUserProfile, requireAuth, canInviteUsers, getUserTeams, getActiveTeam } from "@/lib/auth"
+import { getUserProfile, requireAuth, canInviteUsers, getUserTeams, getActiveTeam, isTeamStaff } from "@/lib/auth"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { ThemeProvider } from "@/components/theme-provider"
 import { LanguageProvider } from "@/lib/language-context"
+import { AppSidebar } from "@/components/app-sidebar"
+import { SiteHeader } from "@/components/site-header"
 
 export default async function DashboardLayout({
   children,
@@ -12,11 +14,10 @@ export default async function DashboardLayout({
 }) {
   await requireAuth()
   const profile = await getUserProfile()
-  const isAdmin = profile?.is_admin || false
-  const canInvite = await canInviteUsers()
-  const teams = await getUserTeams()
   const activeTeam = await getActiveTeam()
-
+  const isAdmin = profile?.is_admin || false
+  const isStaff = await isTeamStaff(activeTeam.id)
+  const teams = await getUserTeams()
   if (!profile) {
     return null
   }
@@ -24,25 +25,17 @@ export default async function DashboardLayout({
   // Update the layout to use the new schema field names
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-      <LanguageProvider>
-        <SidebarProvider>
+      <SidebarProvider>
+      <AppSidebar variant="inset" profile={profile} isAdmin={isAdmin} isStaff={isStaff} teams={teams} activeTeam={activeTeam} />
+      <SidebarInset>
+        <SiteHeader header="" />
           <div className="flex min-h-screen bg-background w-full">
-            <DashboardSidebar
-              isAdmin={isAdmin}
-              userName={profile.name}
-              userEmail={profile.email}
-              userRole={profile.role || "Member"}
-              canInvite={canInvite}
-              teams={teams}
-              activeTeam={activeTeam}
-            />
-            <SidebarInset className="flex-1 bg-background">
-              <div className="container-full animate-in">{children}</div>
-            </SidebarInset>
+              <div className="animate-in w-full">{children}</div>
           </div>
-        </SidebarProvider>
-      </LanguageProvider>
+          </SidebarInset>
+    </SidebarProvider>
     </ThemeProvider>
+    
   )
 }
 

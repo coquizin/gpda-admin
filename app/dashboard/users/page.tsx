@@ -54,7 +54,7 @@ export default async function UsersPage() {
   }
 
   return (
-    <div className="space-y-6 py-6 w-full flex flex-col justify-center">
+    <div className="space-y-6 py-6 px-4 lg:px-6 w-full flex flex-col justify-center">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Users</h1>

@@ -24,7 +24,7 @@ export default async function NewsEditPage({ params }: NewsEditPageProps) {
   const { data: teams } = await supabase.from("teams").select("id, name").order("name")
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 lg:px-6 py-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Edit News</h1>
         <p className="text-muted-foreground">Update news article</p>

@@ -144,7 +144,7 @@ export default async function TeamProfilePage() {
   ) as TeamMember[]
 
   return (
-    <div className="space-y-6 py-6">
+    <div className="space-y-6 py-6 px-4 lg:px-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{formattedTeam?.name || "Team Profile"}</h1>

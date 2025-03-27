@@ -1,13 +1,17 @@
-import { notFound, useParams } from "next/navigation"
+import { notFound } from "next/navigation"
 import { getActiveTeam, getUserProfile, requireAuth } from "@/lib/auth"
 import { NewsForm } from "../news-form"
 import { createClient } from "@/app/utils/supabase/client"
 import { Team } from "@/entities"
 
 
-export default async function NewsEditPage() {
+export default async function NewsEditPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
   await requireAuth()
-  const { id } = useParams<{ id: string}>()
+  const { id } = await params
   const supabase = createClient()
   const session = await requireAuth()
   const profile = await getUserProfile()

@@ -1,9 +1,13 @@
-import { notFound, useParams } from "next/navigation"
+import { notFound } from "next/navigation"
 import { canInviteUsers, requireAuth } from "@/lib/auth"
 import { TeamForm } from "../team-form"
 import { createClient } from "@/app/utils/supabase/client"
 
-export default async function TeamEditPage() {
+export default async function TeamEditPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
   const supabase = createClient()
   await requireAuth()
   const isLeader = await canInviteUsers()
@@ -17,7 +21,7 @@ export default async function TeamEditPage() {
     )
   }
 
-  const { id } = useParams<{ id: string}>()
+  const { id } = await params
 
   // Get team data
   const { data: team } = await supabase.from("teams").select("*").eq("id", id).single()

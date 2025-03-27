@@ -14,15 +14,13 @@ type UserTeamWithUser = {
   user: Pick<User, 'id' | 'name' | 'email'>
 }
 
-interface StaffEditPageProps {
-  params: {
-    id: string
-  }
-}
-
-export default async function StaffEditPage({ params }: StaffEditPageProps) {
+export default async function StaffEditPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
   const supabase = await createClient()
-  const { id } = params
+  const { id } = await params
 
   // Check if user can edit team staff
   const canEditStaff = await isTeamStaff(id)

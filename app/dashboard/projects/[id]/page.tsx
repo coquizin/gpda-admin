@@ -1,4 +1,4 @@
-import { notFound, useParams } from "next/navigation"
+import { notFound } from "next/navigation"
 import { getActiveTeam, getUserProfile, requireAuth } from "@/lib/auth"
 import { ProjectForm } from "../project-form"
 import { createClient } from "@/app/utils/supabase/client"
@@ -8,10 +8,14 @@ type Teams = {
   name: string
 }
 
-export default async function ProjectEditPage() {
+export default async function ProjectEditPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
   const supabase = createClient()
   await requireAuth()
-  const { id } = useParams<{ id: string}>()
   const profile = await getUserProfile()
   const activeTeam = await getActiveTeam()
 

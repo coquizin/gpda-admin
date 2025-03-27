@@ -1,9 +1,13 @@
-import { notFound, useParams } from "next/navigation"
+import { notFound } from "next/navigation"
 import { canInviteUsers, getActiveTeam, requireAuth } from "@/lib/auth"
 import { SquadForm } from "../squad-form"
 import { createClient } from "@/app/utils/supabase/client"
 
-export default async function SquadEditPage() {
+export default async function SquadEditPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
   const supabase = createClient()
   
   await requireAuth()
@@ -18,7 +22,7 @@ export default async function SquadEditPage() {
     )
   }
 
-  const { id } = useParams<{ id: string}>()
+  const { id } = await params
 
   // Get squad data
   const { data: squad } = await supabase.from("squads").select("*").eq("id", id).single()

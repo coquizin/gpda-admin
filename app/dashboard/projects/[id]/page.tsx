@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { getActiveTeam, getUserProfile, requireAuth } from "@/lib/auth"
+import { getActiveTeam, getUserProfile, getUsersByTeamId, requireAuth } from "@/lib/auth"
 import { ProjectForm } from "../project-form"
 import { createClient } from "@/app/utils/supabase/client"
 
@@ -18,6 +18,7 @@ export default async function ProjectEditPage({
   await requireAuth()
   const profile = await getUserProfile()
   const activeTeam = await getActiveTeam()
+  const usersTeam = await getUsersByTeamId(activeTeam?.id)
 
   // Get project data
   const { data: project } = await supabase.from("projects").select("*").eq("id", id).single()
@@ -48,7 +49,7 @@ export default async function ProjectEditPage({
         <p className="text-muted-foreground">Update project details</p>
       </div>
 
-      <ProjectForm project={project} teams={teams || []} squads={squads || []} isEditing={true} />
+      <ProjectForm project={project} teams={teams || []} squads={squads || []} isEditing={true} usersTeam={usersTeam} />
     </div>
   )
 }

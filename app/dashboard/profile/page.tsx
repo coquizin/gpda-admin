@@ -15,7 +15,7 @@ export default async function ProfilePage() {
   const activeTeam = await getActiveTeam()
   const userNews = await getUserNews()
   const userProjects = await getUserProjects()
-
+  
   if (!profile) {
     return null
   }

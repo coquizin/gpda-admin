@@ -1,4 +1,4 @@
-import { requireAuth, getUserProfile, getActiveTeam } from "@/lib/auth"
+import { requireAuth, getUserProfile, getActiveTeam, getUsersByTeamId } from "@/lib/auth"
 import { ProjectForm } from "../project-form"
 import { createClient } from "@/app/utils/supabase/client"
 import React from "react"
@@ -13,6 +13,7 @@ export default async function NewProjectPage() {
   await requireAuth()
   const profile = await getUserProfile()
   const activeTeam = await getActiveTeam()
+  const usersTeam = await getUsersByTeamId(activeTeam?.id)
 
   // Get teams the user has access to
   let teams: Teams[] = []
@@ -38,7 +39,7 @@ export default async function NewProjectPage() {
         <p className="text-muted-foreground">Create a new project</p>
       </div>
 
-      <ProjectForm teams={teams} isEditing={false} squads={squads || []} />
+      <ProjectForm teams={teams} isEditing={false} squads={squads || []} usersTeam={usersTeam} />
     </div>
   )
 }

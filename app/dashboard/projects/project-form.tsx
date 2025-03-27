@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { uploadImage } from "@/lib/upload"
 import { Button } from "@/components/ui/button"
@@ -12,10 +12,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, Upload, X, ImageIcon } from "lucide-react"
+import { AlertCircle, Upload, X, ImageIcon, Trash2, Plus } from "lucide-react"
 import Image from "next/image"
 import { createClient } from "@/app/utils/supabase/client"
-import { Squad } from "@/entities"
+import { Squad, User } from "@/entities"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { getActiveTeam } from "@/lib/auth"
 
 interface Team {
   id: string
@@ -37,14 +39,14 @@ interface ProjectFormProps {
   teams: Team[]
   squads: Squad[]
   isEditing: boolean
+  usersTeam: User[]
 }
 
-export function ProjectForm({ project, teams, squads, isEditing }: ProjectFormProps) {
+export function ProjectForm({ project, teams, squads, isEditing, usersTeam }: ProjectFormProps) {
   const supabase = createClient()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  console.log(project)
   const [name, setName] = useState(project?.name || "")
   const [description, setDescription] = useState(project?.description || "")
   const [teamId, setTeamId] = useState(project?.team_id || (teams.length === 1 ? teams[0].id : ""))
@@ -55,8 +57,11 @@ export function ProjectForm({ project, teams, squads, isEditing }: ProjectFormPr
   const [imagePreview, setImagePreview] = useState<string | null>(project?.image_url || null)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
-
+  const [users, setUsers] = useState<User[]>([])
+  const [newUserId, setNewUserId] = useState("")
+  
   const statusOptions = ["Planned", "In Progress", "Completed", "On Hold", "Cancelled"]
+  const availableUsers = usersTeam.filter((team) => !users.some((u) => u.id === team.id))
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -78,6 +83,61 @@ export function ProjectForm({ project, teams, squads, isEditing }: ProjectFormPr
     setImagePreview(null)
     setImageUrl("")
     setUploadError(null)
+  }
+
+  useEffect(() => {
+      if (isEditing && project) {
+        const loadMemberships = async () => {
+          // Load team memberships
+          const { data: userProject } = await supabase
+            .from("user_projects")
+            .select(`
+              project_id,
+              user:user_id (
+                id,
+                name,
+                email,
+                avatar_url,
+                banner_url,
+                is_admin,
+                created_at
+              )
+            `)
+            .eq("project_id", project.id)
+          
+          if (userProject) {
+            setUsers(
+              userProject.map((up: any) => ({
+                id: up.user.id,
+                name: up.user.name,
+                email: up.user.email,
+                avatar_url: up.user.avatar_url,
+                banner_url: up.user.banner_url,
+                is_admin: up.user.is_admin,
+                created_at: up.user.created_at,
+              })),
+            )
+          }
+          
+        }
+  
+        loadMemberships()
+      }
+    }, [isEditing, project])
+
+  const handleRemoveUser = (userId: string) => {
+    const updatedUsers = users.filter((user) => user.id !== userId)
+    setUsers(updatedUsers)
+  }
+
+  const handleAddUser = () => {
+    if (!newUserId) return
+
+    const user = usersTeam.find((t) => t.id === newUserId)
+    if (!user) return
+    const updatedUsers = [...users, user]
+    setUsers(updatedUsers)
+    setNewUserId("")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -117,18 +177,42 @@ export function ProjectForm({ project, teams, squads, isEditing }: ProjectFormPr
           .eq("id", project!.id)
 
         if (error) throw error
+
+        if (users.length > 0) {
+          const userMembershipsData = users.map((u) => ({
+            project_id: project!.id,
+            user_id: u.id,
+          }))
+
+          const { error: userError } = await supabase.from("user_projects").insert(userMembershipsData)
+
+          if (userError) throw userError
+        }
       } else {
         // Create new project
-        const { error } = await supabase.from("projects").insert({
+        const { data: projectRes , error } = await supabase.from("projects").insert({
           name,
           description,
           team_id: teamId,
           squad_id: squadId,
           status,
           image_url: finalImageUrl || null,
-        })
+        }).select("id").single()
 
         if (error) throw error
+
+        if (users.length > 0) {
+          const userMembershipsData = users.map((u) => ({
+            project_id: projectRes.id,
+            user_id: u.id,
+          }))
+
+          const { error: teamError } = await supabase.from("user_projects").insert(userMembershipsData)
+
+          if (teamError) throw teamError
+        }
+
+
       }
 
       router.push("/dashboard/projects")
@@ -242,6 +326,56 @@ export function ProjectForm({ project, teams, squads, isEditing }: ProjectFormPr
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-4 pt-6">
+              <h3 className="text-lg font-medium">Users participation</h3>
+
+              {users.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead className="w-[100px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell>{user.name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="icon" onClick={() => handleRemoveUser(user.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <p className="text-sm text-muted-foreground">No users participation added</p>
+              )}
+
+              <div className="flex flex-col md:flex-row gap-2">
+                <Select value={newUserId} onValueChange={setNewUserId} disabled={usersTeam?.length === 0}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select an user" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableUsers?.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button type="button" onClick={handleAddUser} disabled={!newUserId}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add User
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-2">

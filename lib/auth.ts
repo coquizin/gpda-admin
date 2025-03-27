@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/app/utils/supabase/server"
 import { cookies } from "next/headers"
 import { setCookie } from "nookies"
+import { User } from "@/entities"
 
 export async function getSession() {
   const supabase = await createClient()
@@ -154,6 +155,44 @@ export async function getActiveTeam() {
   }
 
   return team
+}
+
+export async function getUsersByTeamId(teamId: string) {
+  const supabase = await createClient()
+  const session = await getSession()
+  
+  if (!session) {
+    return []
+  }
+  const { data: users } = await supabase
+    .from("user_teams")
+    .select(`
+      user_id,
+      user:profiles (
+        id,
+        name,
+        email,
+        avatar_url,
+        banner_url,
+        is_admin,
+        created_at
+      )
+    `)
+    .eq("team_id", teamId) as { data: Array<{ user_id: string; user: User }> | null }
+  
+    console.log(users)
+
+    const usersData = (users || []).map((u) => ({
+    id: u.user.id,
+    name: u.user.name,
+    email: u.user.email,
+    avatar_url: u.user.avatar_url,
+    banner_url: u.user.banner_url,
+    is_admin: u.user.is_admin,
+    created_at: u.user.created_at,
+  }))
+
+  return usersData
 }
 
 export async function requireAuth() {

@@ -160,7 +160,7 @@ export function ProfileEditModal({ user }: ProfileEditModalProps) {
           <span>Edit Profile</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[100dvh] overflow-hidden p-4 md:p-6 dialog-content-mobile">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
         </DialogHeader>
@@ -185,7 +185,10 @@ export function ProfileEditModal({ user }: ProfileEditModalProps) {
             <TabsTrigger value="media">Media</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="profile" className="space-y-4">
+          <TabsContent
+            value="profile"
+            className="space-y-4 md:max-h-none max-h-[65dvh] overflow-y-auto pr-1 dialog-tabs-content"
+          >
             <div className="space-y-2">
               <Label htmlFor="full-name">Full Name</Label>
               <Input id="full-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
@@ -215,13 +218,13 @@ export function ProfileEditModal({ user }: ProfileEditModalProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="twitter">X</Label>
+                <Label htmlFor="x">X</Label>
                 <div className="flex">
                   <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
                     @
                   </span>
                   <Input
-                    id="twitter"
+                    id="x"
                     value={twitter}
                     onChange={(e) => setTwitter(e.target.value)}
                     placeholder="username"
@@ -259,7 +262,10 @@ export function ProfileEditModal({ user }: ProfileEditModalProps) {
             </div>
           </TabsContent>
 
-          <TabsContent value="media" className="space-y-6">
+          <TabsContent
+            value="media"
+            className="space-y-6 max-h-[100dvh] md:max-h-none overflow-y-auto pr-1 dialog-tabs-content"
+          >
             <div className="space-y-4">
               <Label>Profile Picture</Label>
               <div className="flex items-center gap-4">
@@ -329,11 +335,11 @@ export function ProfileEditModal({ user }: ProfileEditModalProps) {
           </TabsContent>
         </Tabs>
 
-        <DialogFooter>
+        <DialogFooter className="sticky bottom-0 bg-background pt-2 border-t md:mt-4">
           <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
             Cancel
           </Button>
-          <Button type="button" onClick={handleUpdateProfile} disabled={loading}>
+          <Button className="md:mb-0 mb-4" type="button" onClick={handleUpdateProfile} disabled={loading}>
             {loading ? "Saving..." : "Save Changes"}
           </Button>
         </DialogFooter>

@@ -178,6 +178,8 @@ export function ProjectForm({ project, teams, squads, isEditing, usersTeam }: Pr
 
         if (error) throw error
 
+        await supabase.from("user_projects").delete().eq("project_id", project!.id)
+        
         if (users.length > 0) {
           const userMembershipsData = users.map((u) => ({
             project_id: project!.id,

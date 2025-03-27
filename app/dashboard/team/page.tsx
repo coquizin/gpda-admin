@@ -189,8 +189,8 @@ export default async function TeamProfilePage() {
                           <AvatarFallback>{member.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{member.name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                          <p className="font-medium">{member.name}</p>
+                          <p className="text-xs text-muted-foreground">{member.email}</p>
                           <div className="flex flex-wrap gap-1 mt-1">
                             {member.teamRole && (
                               <Badge variant="outline" className="text-xs capitalize">

@@ -10,6 +10,7 @@ import { Team, User, Squad } from "@/entities"
 import { createClient } from "@/app/utils/supabase/client"
 import { TeamEditModal } from "./team-edit-modal"
 import { TeamFeed } from "./team-feed"
+import { getFirstLastName } from "@/app/utils/utils"
 
 type TeamWithRelations = Team & {
   president: Pick<User, 'id' | 'name' | 'email' | 'avatar_url'> | null
@@ -183,14 +184,14 @@ export default async function TeamProfilePage() {
                 <CardContent>
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {uniqueMembers.map((member) => (
-                      <div key={member.id} className="flex items-center gap-3 p-3 rounded-lg border">
+                      <div key={member.id} className="flex items-center gap-3 p-3 rounded-lg border min-w-0">
                         <Avatar>
                           <AvatarImage src={member.avatar_url || ""} alt={member.name} />
                           <AvatarFallback>{member.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium">{member.name}</p>
-                          <p className="text-xs text-muted-foreground">{member.email}</p>
+                          <p className="font-medium truncate whitespace-nowrap max-w-xs">{getFirstLastName(member.name)}</p>
+                          <p className="text-xs text-muted-foreground truncate whitespace-nowrap max-w-xs">{member.email}</p>
                           <div className="flex flex-wrap gap-1 mt-1">
                             {member.teamRole && (
                               <Badge variant="outline" className="text-xs capitalize">
@@ -247,7 +248,7 @@ export default async function TeamProfilePage() {
                                       {member.user.name.substring(0, 2).toUpperCase()}
                                     </AvatarFallback>
                                   </Avatar>
-                                  <span className="text-sm">{member.user.name}</span>
+                                  <span className="text-sm">{getFirstLastName(member.user.name)}</span>
                                 </div>
                               ))
                             ) : (
@@ -289,16 +290,16 @@ export default async function TeamProfilePage() {
               <CardDescription>Team president, vice-president, and coordinators</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-4 min-w-0">
                 {president && (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <Avatar>
                       <AvatarImage src={president.avatar_url || ""} alt={president.name} />
                       <AvatarFallback>{president.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <div>
-                      <p className="font-medium">{president.name}</p>
-                      <p className="text-sm text-muted-foreground">President</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate whitespace-nowrap max-w-xs">{getFirstLastName(president.name)}</p>
+                      <p className="text-sm text-muted-foreground truncate whitespace-nowrap max-w-xs">President</p>
                     </div>
                   </div>
                 )}
@@ -310,7 +311,7 @@ export default async function TeamProfilePage() {
                       <AvatarFallback>{vice_president.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium">{vice_president.name}</p>
+                      <p className="font-medium">{getFirstLastName(vice_president.name)}</p>
                       <p className="text-sm text-muted-foreground">Vice President</p>
                     </div>
                   </div>
@@ -329,7 +330,7 @@ export default async function TeamProfilePage() {
                             <AvatarFallback>{coordinator.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium">{coordinator.name}</p>
+                            <p className="font-medium">{getFirstLastName(coordinator.name)}</p>
                             <p className="text-sm text-muted-foreground">Coordinator</p>
                           </div>
                         </div>

@@ -125,7 +125,7 @@ export default async function TeamProfilePage() {
       <Card className="overflow-hidden">
         <div className="h-48 w-full relative bg-gradient-to-r from-blue-600 to-blue-800">
           {team.banner_url ? (
-            <Image src={team.banner_url || "/placeholder.svg"} alt="Team banner" fill className="object-cover" />
+            <Image src={team.banner_url || ""} alt="Team banner" fill className="object-cover" />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
               <Building2 className="h-16 w-16 text-blue-300/50" />

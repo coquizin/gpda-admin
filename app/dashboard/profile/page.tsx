@@ -47,7 +47,7 @@ export default async function ProfilePage() {
       created_at: project.created_at,
       type: "project",
       team_id: project.team_id,
-      team_logo_url: project.team.team_logo_url,
+      team_logo_url: project.team.logo_url,
       team_name: project.team.name,
     })
   })

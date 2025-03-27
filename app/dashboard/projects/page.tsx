@@ -3,8 +3,10 @@ import { getActiveTeam, getUserProfile } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { PlusCircle } from "lucide-react"
+import { EllipsisVertical, PlusCircle } from "lucide-react"
 import { createClient } from "@/app/utils/supabase/client"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DeleteProjectDialog } from "@/components/projects/delete-project-dialog"
 
 export default async function ProjectsPage() {
    const supabase = createClient()
@@ -66,7 +68,7 @@ export default async function ProjectsPage() {
               <TableHead>Squad</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-right"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -95,10 +97,30 @@ export default async function ProjectsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>{new Date(project.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/dashboard/projects/${project.id}`}>Edit</Link>
-                    </Button>
+                  <TableCell>
+                    <div className="flex justify-end items-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+                            size="icon"
+                          >
+                            <EllipsisVertical />
+                            <span className="sr-only">Open menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-32">
+                          <DropdownMenuItem asChild>
+                            <a href={`/dashboard/projects/${project.id}`}>
+                              Edit
+                            </a>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DeleteProjectDialog project={project} />
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

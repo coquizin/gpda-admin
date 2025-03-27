@@ -2,8 +2,10 @@ import Link from "next/link"
 import { getActiveTeam, getUserProfile } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { PlusCircle } from "lucide-react"
+import { EllipsisVertical, PlusCircle } from "lucide-react"
 import { createClient } from "@/app/utils/supabase/client"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DeleteNewsDialog } from "@/components/news/delete-news-dialog"
 
 export default async function NewsPage() {
   const supabase = createClient()
@@ -65,7 +67,7 @@ export default async function NewsPage() {
               <TableHead>Team</TableHead>
               <TableHead>Author</TableHead>
               <TableHead>Date</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-right"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -79,10 +81,30 @@ export default async function NewsPage() {
                   <TableCell>{item.team?.name || "—"}</TableCell>
                   <TableCell className="capitalize">{item.author?.name || "—"}</TableCell>
                   <TableCell>{new Date(item.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/dashboard/news/${item.id}`}>Edit</Link>
-                    </Button>
+                  <TableCell>
+                    <div className="flex justify-end items-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+                            size="icon"
+                          >
+                            <EllipsisVertical />
+                            <span className="sr-only">Open menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-32">
+                          <DropdownMenuItem asChild>
+                            <a href={`/dashboard/news/${item.id}`}>
+                              Edit
+                            </a>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DeleteNewsDialog news={item} />
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

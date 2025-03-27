@@ -1,12 +1,26 @@
+import { createClient } from "@/app/utils/supabase/client"
 import { v4 as uuidv4 } from "uuid"
-import { createClient } from "@/app/utils/supabase/server"
 
 // Default bucket name - make sure this exists in your Supabase project
 const DEFAULT_BUCKET = "public"
 
+export async function getAllBuckets() {
+  try {
+    const supabase = createClient()
+    const { data, error } = await supabase.storage.listBuckets()
+
+    if (error) throw error
+
+    return data
+  } catch (error) {
+    console.error("Error getting buckets:", error)
+    throw error
+  }
+}
+
 export async function uploadImage(file: File, bucket: string = DEFAULT_BUCKET, folder: string) {
   try {
-    const supabase = await createClient()
+    const supabase = createClient()
     const fileExt = file.name.split(".").pop()
     const fileName = `${folder}/${uuidv4()}.${fileExt}`
 
@@ -41,7 +55,7 @@ export async function uploadImage(file: File, bucket: string = DEFAULT_BUCKET, f
 
 export async function deleteImage(url: string, bucket: string = DEFAULT_BUCKET) {
   try {
-    const supabase = await createClient()
+    const supabase = createClient()
     // Extract the path from the URL
     const urlObj = new URL(url)
     const pathMatch = urlObj.pathname.match(new RegExp(`/${bucket}/object/public/(.+)$`))

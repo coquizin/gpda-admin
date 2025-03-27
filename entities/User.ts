@@ -2,7 +2,9 @@ export interface User {
   id: string
   name: string
   email: string
-  is_admin: boolean
+  is_admin: boolean,
+  avatar_url: string
+  banner_url: string
   created_at: string
 }
 

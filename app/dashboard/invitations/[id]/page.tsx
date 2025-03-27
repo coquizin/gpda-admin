@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation"
+import { notFound, useParams } from "next/navigation"
 import { getUserProfile, canInviteUsers } from "@/lib/auth"
 import { getInvitation } from "@/lib/invitations"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,14 +7,9 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft, Copy, Mail } from "lucide-react"
 
-interface InvitationViewPageProps {
-  params: {
-    id: string
-  }
-}
 
-export default async function InvitationViewPage({ params }: InvitationViewPageProps) {
-  const { id } = params
+export default async function InvitationViewPage() {
+  const { id } = useParams<{ id: string}>()
   const profile = await getUserProfile()
   const canInvite = await canInviteUsers()
 

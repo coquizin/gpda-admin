@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { getActiveTeam, getUserProfile, getUserTeams } from "@/lib/auth"
+import { canInviteUsers, getActiveTeam, getUserProfile, getUserTeams } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { PlusCircle } from "lucide-react"
@@ -7,8 +7,19 @@ import { createClient } from "@/app/utils/supabase/client"
 import React from "react"
 
 export default async function SquadsPage() {
-  const supabase = createClient()
+  const isLeader = await canInviteUsers()
+  
+  if (!isLeader) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <h1 className="text-3xl font-bold">Unauthorized</h1>
+        <p className="text-muted-foreground">You do not have permission to view this page.</p>
+      </div>
+    )
+  }
+
   const profile = await getUserProfile()
+  const supabase = createClient()
   const userTeams = await getUserTeams()
   const activeTeam = await getActiveTeam()
   const selectedTeam = userTeams.find((team) => team.id === activeTeam?.id) || null
@@ -23,7 +34,6 @@ export default async function SquadsPage() {
     )
   }
 
-  console.log(selectedTeam)
   let squadQuery = supabase
   .from("squads")
   .select(`
@@ -69,7 +79,7 @@ export default async function SquadsPage() {
   }
 
   return (
-    <div className="space-y-6 py-6">
+    <div className="space-y-6 py-6 px-4 lg:px-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Squads</h1>

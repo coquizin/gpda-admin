@@ -1,20 +1,15 @@
-import { notFound, redirect } from "next/navigation"
+import { notFound, redirect, useParams } from "next/navigation"
 import { canEditUser, getActiveTeam, getUserProfile } from "@/lib/auth"
 import { UserForm } from "../user-form"
 import { createClient } from "@/app/utils/supabase/client"
 
-interface UserEditPageProps {
-  params: {
-    id: string
-  }
-}
 
-export default async function UserEditPage({ params }: UserEditPageProps) {
+export default async function UserEditPage() {
   const supabase = createClient()
   const profile = await getUserProfile()
   const activeTeam = await getActiveTeam()
   const isAdmin = profile?.is_admin || false
-  const { id } = params
+  const { id } = useParams<{ id: string}>()
 
   // Check if current user can edit this user
   const canEdit = await canEditUser(id)

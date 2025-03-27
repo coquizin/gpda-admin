@@ -1,11 +1,13 @@
-import { requireAuth, getUserProfile } from "@/lib/auth"
+import { requireAuth, getUserProfile, getActiveTeam } from "@/lib/auth"
 import { NewsForm } from "../news-form"
-import { createClient } from "@/app/utils/supabase/server"
 import { Team } from "@/entities/Team"
+import { createClient } from "@/app/utils/supabase/client"
+
 export default async function NewNewsPage() {
-  const supabase = await createClient()
+  const supabase = createClient()
   const session = await requireAuth()
   const profile = await getUserProfile()
+  const activeTeam = await getActiveTeam()
 
   // Get teams the user has access to
   let teams: Team[] = []
@@ -15,17 +17,10 @@ export default async function NewNewsPage() {
     const { data } = await supabase.from("teams").select("id, name, description, banner_url, logo_url, team_color, created_at").order("name")
 
     teams = data || []
-  } else if (profile?.squad_id) {
-    // Regular users can only post to their team
-    const { data: squad } = await supabase.from("squads").select("team_id").eq("id", profile.squad_id).single()
-
-    if (squad) {
-      const { data: team } = await supabase.from("teams").select("id, name, description, banner_url, logo_url, team_color, created_at").eq("id", squad.team_id).single()
-
-      if (team) {
-        teams = [team]
+  } else {
+      if (activeTeam) {
+        teams = [activeTeam]
       }
-    }
   }
 
   return (
@@ -35,7 +30,7 @@ export default async function NewNewsPage() {
         <p className="text-muted-foreground">Create a new news article</p>
       </div>
 
-      <NewsForm teams={teams} isEditing={false} userId={session.user.id} />
+      <NewsForm teams={teams} isEditing={false} userId={session.id} />
     </div>
   )
 }

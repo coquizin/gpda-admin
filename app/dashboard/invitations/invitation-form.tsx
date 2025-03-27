@@ -43,7 +43,7 @@ export function InvitationForm({ teams, squads, userId }: InvitationFormProps) {
   const [copied, setCopied] = useState(false)
 
   const [email, setEmail] = useState("")
-  const [role, setRole] = useState("Member")
+  const [role, setRole] = useState<any>("member")
   const [teamId, setTeamId] = useState(teams.length === 1 ? teams[0].id : "")
   const [squadId, setSquadId] = useState("")
   const [message, setMessage] = useState("")
@@ -113,7 +113,7 @@ export function InvitationForm({ teams, squads, userId }: InvitationFormProps) {
                 setSuccess(false)
                 setInvitationLink(null)
                 setEmail("")
-                setRole("Member")
+                setRole("member")
                 setSquadId("")
                 setMessage("")
               }}
@@ -153,9 +153,9 @@ export function InvitationForm({ teams, squads, userId }: InvitationFormProps) {
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Member">Member</SelectItem>
-                  <SelectItem value="Coordinator">Coordinator</SelectItem>
-                  <SelectItem value="President">President</SelectItem>
+                  <SelectItem value="member">Member</SelectItem>
+                  <SelectItem value="coordinator">Coordinator</SelectItem>
+                  <SelectItem value="president">President</SelectItem>
                 </SelectContent>
               </Select>
             </div>

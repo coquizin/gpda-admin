@@ -44,11 +44,11 @@ const data = {
       url: "/dashboard",
       icon: LayoutDashboardIcon,
     },
-    {
-      title: "Analytics",
-      url: "/dashboard/analytics",
-      icon: BarChartIcon,
-    },
+    // {
+    //   title: "Analytics",
+    //   url: "/dashboard/analytics",
+    //   icon: BarChartIcon,
+    // },
     {
       title: "Team Profile",
       url: "/dashboard/team",
@@ -106,7 +106,7 @@ const data = {
   navSecondary: [
     {
       title: "Settings",
-      url: "#",
+      url: "/dashboard/settings",
       icon: SettingsIcon,
     },
     {
@@ -168,38 +168,46 @@ type SidebarPropsWithVariantAndActiveTeam = SidebarProps & {
 
 
 export function AppSidebar({profile, isAdmin, isStaff, activeTeam, teams, ...props  }: SidebarPropsWithVariantAndActiveTeam) {
-  const supabase = createClient()
-  const pathname = usePathname()
   const router = useRouter()
   const [selectedTeam, setSelectedTeam] = React.useState<Team | null>(null)
+
   data.management.forEach((item) => {
     if (item.name === "Teams" && !isAdmin) {
       item.show = false
+    } else {
+      item.show = true
     }
     if (item.name === "Users" && !isStaff) {
       item.show = false
+    } {
+      item.show = true
     }
     if (item.name === "Invitations" && !isStaff) {
       item.show = false
+    } {
+      item.show = true
     }
     if (item.name === "Squads" && !isStaff) {
       item.show = false
+    } {
+      item.show = true
     }
   }
   )
 
-  React.useEffect(() => {
-    if (activeTeam && !selectedTeam) {
-      setSelectedTeam(activeTeam)
-      setCookie(null, 'selectedTeamId', activeTeam.id, {
-        path: '/', // disponível em toda a aplicação
-        maxAge: 30 * 24 * 60 * 60, // 30 dias
-      })
-    }
-  }, [activeTeam, selectedTeam])
+
+  // React.useEffect(() => {
+  //   if (activeTeam && !selectedTeam) {
+  //     setSelectedTeam(activeTeam)
+  //     setCookie(null, 'selectedTeamId', activeTeam.id, {
+  //       path: '/', // disponível em toda a aplicação
+  //       maxAge: 30 * 24 * 60 * 60, // 30 dias
+  //     })
+  //   }
+  // }, [activeTeam, selectedTeam])
 
   const switchTeam = (team: Team) => {
-    setSelectedTeam(team)
+    // setSelectedTeam(team)
     setCookie(null, 'selectedTeamId', team.id, {
       path: '/', // disponível em toda a aplicação
       maxAge: 30 * 24 * 60 * 60, // 30 dias

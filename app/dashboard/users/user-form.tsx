@@ -122,7 +122,6 @@ export function UserForm({ user, squads, teams, isEditing }: UserFormProps) {
           `)
           .eq("user_id", user.id)
         
-        console.log(userSquads)
         if (userSquads) {
           setSquadMemberships(
             userSquads.map((us: any) => ({
@@ -262,7 +261,7 @@ export function UserForm({ user, squads, teams, isEditing }: UserFormProps) {
           password,
           options: {
             data: {
-              name: fullName,
+              full_name: fullName,
               is_admin: isAdmin,
               avatar_url: "",
             },

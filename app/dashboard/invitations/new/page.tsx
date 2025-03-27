@@ -1,12 +1,12 @@
 import { getUserProfile, canInviteUsers } from "@/lib/auth"
 import { InvitationForm } from "../invitation-form"
 import { redirect } from "next/navigation"
-import { createClient } from "@/app/utils/supabase/server"
 import { Team } from "@/entities/Team"
 import { Squad } from "@/entities/Squad"
+import { createClient } from "@/app/utils/supabase/client"
 
 export default async function NewInvitationPage() {
-  const supabase = await createClient()
+  const supabase = createClient()
   const profile = await getUserProfile()
   const canInvite = await canInviteUsers()
 
@@ -73,7 +73,7 @@ export default async function NewInvitationPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 py-6 px-4 lg:px-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Create Invitation</h1>
         <p className="text-muted-foreground">Invite new members to join your team</p>

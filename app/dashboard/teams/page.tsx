@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { getUserProfile } from "@/lib/auth"
+import { canInviteUsers, getUserProfile } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { PlusCircle } from "lucide-react"
@@ -12,9 +12,18 @@ type TeamWithRelations = Team & {
 }
 
 export default async function TeamsPage() {
+  const isLeader = await canInviteUsers()
+    
+  if (!isLeader) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <h1 className="text-3xl font-bold">Unauthorized</h1>
+        <p className="text-muted-foreground">You do not have permission to view this page.</p>
+      </div>
+    )
+  }
   const supabase = createClient()
   const profile = await getUserProfile()
-  const isAdmin = profile?.is_admin || false
 
   // Get all teams with president info
   const { data: teams } = await supabase
@@ -33,8 +42,6 @@ export default async function TeamsPage() {
     `)
     .order("name")
 
-    console.log(teams)
-
   const formattedTeams = teams?.map(team => ({
     ...team,
     president: team.president?.[0]?.user || null,
@@ -42,7 +49,7 @@ export default async function TeamsPage() {
   })) as TeamWithRelations[] || []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 py-6 lg:px-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Teams</h1>

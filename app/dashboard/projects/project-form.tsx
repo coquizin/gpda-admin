@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Upload, X, ImageIcon } from "lucide-react"
 import Image from "next/image"
 import { createClient } from "@/app/utils/supabase/client"
+import { Squad } from "@/entities"
 
 interface Team {
   id: string
@@ -26,6 +27,7 @@ interface Project {
   name: string
   description: string
   team_id: string
+  squad_id: string
   status: string
   image_url: string | null
 }
@@ -33,18 +35,20 @@ interface Project {
 interface ProjectFormProps {
   project?: Project
   teams: Team[]
+  squads: Squad[]
   isEditing: boolean
 }
 
-export function ProjectForm({ project, teams, isEditing }: ProjectFormProps) {
+export function ProjectForm({ project, teams, squads, isEditing }: ProjectFormProps) {
   const supabase = createClient()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
+  console.log(project)
   const [name, setName] = useState(project?.name || "")
   const [description, setDescription] = useState(project?.description || "")
   const [teamId, setTeamId] = useState(project?.team_id || (teams.length === 1 ? teams[0].id : ""))
+  const [squadId, setSquadId] = useState(project?.squad_id || (squads.length === 1 ? squads[0].id : ""))
   const [status, setStatus] = useState(project?.status || "Planned")
   const [imageUrl, setImageUrl] = useState(project?.image_url || "")
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -88,7 +92,7 @@ export function ProjectForm({ project, teams, isEditing }: ProjectFormProps) {
       if (imageFile) {
         try {
           setUploadingImage(true)
-          finalImageUrl = await uploadImage(imageFile, "public", "projects")
+          finalImageUrl = await uploadImage(imageFile, "news", "projects")
           setUploadingImage(false)
         } catch (uploadErr: any) {
           setUploadingImage(false)
@@ -106,6 +110,7 @@ export function ProjectForm({ project, teams, isEditing }: ProjectFormProps) {
             name,
             description,
             team_id: teamId,
+            squad_id: squadId,
             status,
             image_url: finalImageUrl || null,
           })
@@ -118,6 +123,7 @@ export function ProjectForm({ project, teams, isEditing }: ProjectFormProps) {
           name,
           description,
           team_id: teamId,
+          squad_id: squadId,
           status,
           image_url: finalImageUrl || null,
         })
@@ -216,6 +222,22 @@ export function ProjectForm({ project, teams, isEditing }: ProjectFormProps) {
                   {teams.map((team) => (
                     <SelectItem key={team.id} value={team.id}>
                       {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="squad">Squad</Label>
+              <Select value={squadId} onValueChange={setSquadId} required disabled={squads.length === 1}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a squad" />
+                </SelectTrigger>
+                <SelectContent>
+                  {squads.map((squad) => (
+                    <SelectItem key={squad.id} value={squad.id}>
+                      {squad.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/app/utils/supabase/server"
 import { cookies } from "next/headers"
+import { setCookie } from "nookies"
 
 export async function getSession() {
   const supabase = await createClient()
@@ -128,18 +129,31 @@ export async function getUserSquads() {
 export async function getActiveTeam() {
   const cookieStore = cookies()
   const selectedTeamId = (await cookieStore).get("selectedTeamId")?.value
+  const teams = await getUserTeams()
   if (!selectedTeamId) {
-    const teams = await getUserTeams()
     if (teams.length > 0) {
       const team = teams[0]
       const cookieStore = await cookies()
+      setCookie(null, 'selectedTeamId', team.id, {
+                  path: '/', // disponível em toda a aplicação
+                  maxAge: 30 * 24 * 60 * 60, // 30 dias
+          })
       return team
     }
     return null
   }
 
-  const teams = await getUserTeamById(selectedTeamId)
-  return teams
+  let team = await getUserTeamById(selectedTeamId) 
+
+  if (!team) {
+    team = teams[0]
+    setCookie(null, 'selectedTeamId', team.id, {
+      path: '/', // disponível em toda a aplicação
+      maxAge: 30 * 24 * 60 * 60, // 30 dias
+    })
+  }
+
+  return team
 }
 
 export async function requireAuth() {
@@ -308,3 +322,150 @@ export async function getUserTeamById(teamId: string) {
 
   return team
 }
+
+export async function getUserNews() {
+  const supabase = await createClient()
+  const session = await getSession()
+
+  if (!session) {
+    return []
+  }
+
+  const { data: userNews } = await supabase
+    .from("news")
+    .select(`*,
+      team:teams (
+        id,
+        name,
+        logo_url
+      )`)
+    .eq("author_id", session.id)
+    .order("created_at", { ascending: false })
+
+  return userNews
+}
+
+export async function getUserProjects() {
+  const supabase = await createClient()
+  const session = await getSession()
+
+  if (!session) {
+    return []
+  }
+
+  const { data: relations, error: relError } = await supabase
+    .from("user_projects")
+    .select("project_id")
+    .eq("user_id", session.id)
+
+  if (relError || !relations?.length) {
+    return []
+  }
+
+  const projectIds = relations.map((r) => r.project_id)
+  
+
+  const { data: userProjects, error } = await supabase
+    .from("projects")
+    .select(`
+      *,
+      user_projects (
+        user:profiles (
+          id,
+          name,
+          email
+        )
+      ),
+      team:teams (
+        id,
+        name,
+        logo_url
+      )
+    `)
+    .in("id", projectIds)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Error fetching user projects:", error)
+    return []
+  }
+
+  return userProjects
+}
+
+export async function getPresident(teamId: string) {
+  const supabase = await createClient()
+  const { data: president } = await supabase
+    .from("user_teams")
+    .select("user_id")
+    .eq("team_id", teamId)
+    .eq("role", "president")
+    .single()
+
+  const { data: presidentData } = await supabase
+    .from("profiles")
+    .select("id, name, email, avatar_url")
+    .eq("id", president?.user_id)
+    .single()
+
+  return presidentData
+}
+
+export async function getVicePresident(teamId: string) {
+  const supabase = await createClient()
+  const { data: vicePresident } = await supabase
+    .from("user_teams")
+    .select("user_id")
+    .eq("team_id", teamId)
+    .eq("role", "vice_president")
+    .single()
+
+  const { data: vicePresidentData } = await supabase
+    .from("profiles")
+    .select("id, name, email, avatar_url")
+    .eq("id", vicePresident?.user_id)
+    .single()
+
+  return vicePresidentData
+}
+
+export async function getSquads(teamId: string) {
+  const supabase = await createClient()
+  const { data: squads } = await supabase
+    .from("squads")
+    .select("id, name")
+    .eq("team_id", teamId)
+
+  return squads
+}
+
+export async function getCoordinators(teamId: string) {
+  const supabase = await createClient()
+
+  const squads = await getSquads(teamId)
+
+  if (!squads) {
+    return []
+  }
+
+  const { data: coordinators } = await supabase
+    .from("user_squads")
+    .select("user_id")
+    .in("squad_id", squads.map((s) => s.id))
+    .eq("role", "coordinator")
+
+
+  const coordinatorIds = coordinators?.map((c) => c.user_id)
+
+  if (!coordinatorIds || coordinatorIds.length === 0) {
+    return []
+  }
+
+  const { data: coordinatorData } = await supabase
+    .from("profiles")
+    .select("id, name, email, avatar_url")
+    .in("id", coordinatorIds)
+
+  return coordinatorData
+}
+

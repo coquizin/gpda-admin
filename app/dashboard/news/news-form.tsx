@@ -4,8 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/app/utils/supabase/server"
-import { uploadImage } from "@/lib/upload"
+import { getAllBuckets, uploadImage } from "@/lib/upload"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Upload, X, ImageIcon } from "lucide-react"
 import Image from "next/image"
+import { createClient } from "@/app/utils/supabase/client"
 
 interface Team {
   id: string
@@ -38,8 +38,8 @@ interface NewsFormProps {
   userId?: string
 }
 
-export async function NewsForm({ news, teams, isEditing, userId }: NewsFormProps) {
-  const supabase = await createClient()
+export function NewsForm({ news, teams, isEditing, userId }: NewsFormProps) {
+  const supabase = createClient()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -52,8 +52,11 @@ export async function NewsForm({ news, teams, isEditing, userId }: NewsFormProps
   const [imagePreview, setImagePreview] = useState<string | null>(news?.image_url || null)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const buckets = await getAllBuckets()
+    console.log(buckets)
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -87,7 +90,7 @@ export async function NewsForm({ news, teams, isEditing, userId }: NewsFormProps
       if (imageFile) {
         try {
           setUploadingImage(true)
-          finalImageUrl = await uploadImage(imageFile, "public", "news")
+          finalImageUrl = await uploadImage(imageFile, "news", "news")
           setUploadingImage(false)
         } catch (uploadErr: any) {
           setUploadingImage(false)

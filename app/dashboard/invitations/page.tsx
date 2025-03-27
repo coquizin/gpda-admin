@@ -5,15 +5,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { PlusCircle } from "lucide-react"
 import { redirect } from "next/navigation"
-import { createClient } from "@/app/utils/supabase/server"
+import { createClient } from "@/app/utils/supabase/client"
 
 export default async function InvitationsPage() {
-  const supabase = await createClient()
+  const supabase = createClient()
   const profile = await getUserProfile()
   const canInvite = await canInviteUsers()
 
   if (!canInvite) {
-    redirect("/dashboard")
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <h1 className="text-3xl font-bold">Unauthorized</h1>
+        <p className="text-muted-foreground">You do not have permission to view this page.</p>
+      </div>
+    )
   }
 
   // Get invitations created by the current user
@@ -32,7 +37,7 @@ export default async function InvitationsPage() {
     .order("created_at", { ascending: false })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 py-6 px-4 lg:px-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Invitations</h1>

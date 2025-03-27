@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Team } from "@/entities"
 import { getInitials } from "@/app/utils/utils"
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 
 export function TeamSwitcher({
   teams,
@@ -33,7 +34,6 @@ export function TeamSwitcher({
 ) {
   const { isMobile } = useSidebar()
 
-  console.log("activeTeam", activeTeam)
   if (!activeTeam) {
     return null
   }
@@ -47,9 +47,12 @@ export function TeamSwitcher({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                {getInitials(activeTeam.name)}
-              </div>
+                <Avatar className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  <AvatarImage src={activeTeam.logo_url || undefined} alt={activeTeam.name} />
+                  <AvatarFallback className=" bg-primary text-primary-foreground size-8 rounded-lg">
+                    {activeTeam.name?.substring(0, 1).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
                   {activeTeam.name}
@@ -74,9 +77,12 @@ export function TeamSwitcher({
                 onClick={() => setSelectedTeam(team)}
                 className="gap-2 p-2"
               >
-                <div className="flex size-6 items-center justify-center rounded-sm border">
-                  {getInitials(team.name)}
-                </div>
+                <Avatar className="flex size-6 items-center justify-center rounded-sm border">
+                  <AvatarImage src={team.logo_url || undefined} alt={team.name} />
+                  <AvatarFallback className="rounded-sm size-6 border">
+                    {getInitials(team.name)}
+                  </AvatarFallback>
+                </Avatar>
                 {team.name}
                 <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
               </DropdownMenuItem>

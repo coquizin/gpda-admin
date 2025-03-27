@@ -1,4 +1,4 @@
-import { createClient } from "@/app/utils/supabase/server"
+import { createClient } from "@/app/utils/supabase/client"
 import { createId } from "@paralleldrive/cuid2"
 
 export interface Invitation {
@@ -17,9 +17,10 @@ export async function createInvitation(
   role: "admin" | "president" | "vice_president" | "coordinator" | "member",
   squad_id: string | null,
   team_id: string | null,
+  userId: string,
   expiresInDays = 7,
 ) {
-  const supabase = await createClient()
+  const supabase = createClient()
   const id = createId()
   const expires_at = new Date()
   expires_at.setDate(expires_at.getDate() + expiresInDays)
@@ -44,7 +45,7 @@ export async function createInvitation(
 }
 
 export async function getInvitation(id: string) {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from("invitations")
     .select(`
@@ -83,9 +84,31 @@ export async function validateInvitation(id: string) {
 }
 
 export async function markInvitationAsUsed(id: string) {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { error } = await supabase.from("invitations").update({ used: true }).eq("id", id)
 
   if (error) throw error
 }
 
+
+export async function validateTeamId(teamId: string) {
+  const supabase = createClient()
+
+  const { data: team, error } = await supabase
+    .from("teams")
+    .select("*")
+    .eq("id", teamId)
+    .single()
+
+  if (error) {
+    return {
+      valid: false,
+      team: null,
+    }
+  }
+
+  return {
+    valid: !!team,
+    team,
+  }
+}

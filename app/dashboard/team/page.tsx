@@ -1,39 +1,39 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getUserProfile, getActiveTeam, isTeamStaff } from "@/lib/auth"
-import { createClient } from "@/app/utils/supabase/server"
+import { getActiveTeam, isTeamStaff, getPresident, getVicePresident, getCoordinators } from "@/lib/auth"
 import Image from "next/image"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Building2, Users, UserSquare, Edit, Shield } from "lucide-react"
+import { Building2, Users, UserSquare, Edit, Shield, MessageSquare, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
-import { Team, User, Squad, UserTeam, UserSquad } from "@/entities"
+import { Team, User, Squad } from "@/entities"
+import { createClient } from "@/app/utils/supabase/client"
+import { TeamEditModal } from "./team-edit-modal"
+import { TeamFeed } from "./team-feed"
 
 type TeamWithRelations = Team & {
-  president: Pick<User, 'id' | 'name' | 'email'> | null
-  vice_president: Pick<User, 'id' | 'name' | 'email'> | null
+  president: Pick<User, 'id' | 'name' | 'email' | 'avatar_url'> | null
+  vice_president: Pick<User, 'id' | 'name' | 'email' | 'avatar_url'> | null
 }
 
 type SquadWithMembers = Squad & {
   members: Array<{
-    user: Pick<User, 'id' | 'name' | 'email'>
+    user: Pick<User, 'id' | 'name' | 'email' | 'avatar_url'>
   }>
 }
 
-type TeamMember = Pick<User, 'id' | 'name' | 'email'> & {
+type TeamMember = Pick<User, 'id' | 'name' | 'email' | 'avatar_url' > & {
   teamRole?: string
   squad?: string | null
 }
 
 type UserTeamWithUser = {
-  user: Pick<User, 'id' | 'name' | 'email'>
+  user: Pick<User, 'id' | 'name' | 'email' | 'avatar_url'>
   role: string
 }
 
 export default async function TeamProfilePage() {
-  const supabase = await createClient()
-  const profile = await getUserProfile()
+  const supabase = createClient()
   const team = await getActiveTeam()
 
   if (!team) {
@@ -53,31 +53,11 @@ export default async function TeamProfilePage() {
   const canEditStaff = await isTeamStaff(team.id)
 
   // Get team staff
-  const { data: staff, error } = await supabase
-  .from("user_teams")
-  .select(`
-    role,
-    user:profiles (
-      id,
-      name,
-      email
-    )
-  `)
-  .eq("team_id", team.id)
-  .in("role", ["president", "vice_president"]);
+  const president = await getPresident(team.id) as User | null
+  const vice_president = await getVicePresident(team.id) as User | null
 
-  // Get team coordinators TODO FIX COORDINATORS
-  const { data: coordinators } = await supabase
-    .from("user_teams")
-    .select(`
-      user:profiles(
-        id,
-        name,
-        email
-      )
-    `)
-    .eq("team_id", team.id)
-    .eq("role", "coordinator") as { data: UserTeamWithUser[] | null }
+  // Get team coordinators
+  const coordinators = await getCoordinators(team.id) as User[] | null
 
   // Get team squads with members
   const { data: squads } = await supabase
@@ -88,7 +68,8 @@ export default async function TeamProfilePage() {
         user:profiles(
           id,
           name,
-          email
+          email,
+          avatar_url
         )
       )
     `)
@@ -101,20 +82,14 @@ export default async function TeamProfilePage() {
       user:profiles(
         id,
         name,
-        email
+        email,
+        avatar_url
       ),
       role
     `)
     .eq("team_id", team.id) as { data: UserTeamWithUser[] | null }
 
-  // Format team data
-  const formattedTeam = team ? {
-    ...team,
-    president: staff?.find(s => s.role === "president")?.user || null,
-    vice_president: staff?.find(s => s.role === "vice_president")?.user || null,
-  } : null
 
-  console.log("Formatted Team:", team)
   // Format squads data
   const formattedSquads = squads || []
 
@@ -133,6 +108,7 @@ export default async function TeamProfilePage() {
   )
 
   // Combine with team members
+
   const allMembers = [
     ...formattedTeamMembers,
     ...squadMembers,
@@ -144,148 +120,159 @@ export default async function TeamProfilePage() {
   ) as TeamMember[]
 
   return (
-    <div className="space-y-6 py-6 px-4 lg:px-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{formattedTeam?.name || "Team Profile"}</h1>
-          <p className="text-muted-foreground">Team information and members</p>
+    <div className="space-y-6 py-6 px-4 lg:px-6 max-w-6xl mx-auto">
+      <Card className="overflow-hidden">
+        <div className="h-48 w-full relative bg-gradient-to-r from-blue-600 to-blue-800">
+          {team.banner_url ? (
+            <Image src={team.banner_url || "/placeholder.svg"} alt="Team banner" fill className="object-cover" />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Building2 className="h-16 w-16 text-blue-300/50" />
+            </div>
+          )}
         </div>
-        {canEditStaff && (
-          <Button asChild>
-            <Link href={`/dashboard/team/staff-edit/${team.id}`}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit Staff Positions
-            </Link>
-          </Button>
-        )}
-      </div>
+        <CardContent className="pt-6 flex justify-between">
+          <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+            <div className="relative -mt-16 md:-mt-24">
+              <Avatar className="h-24 w-24 border-4 border-background">
+                <AvatarImage src={team.logo_url || ""} alt={team.name} />
+                <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+                  {team.name?.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-2xl font-bold">{team.name}</h2>
+              <p className="text-muted-foreground">{team.description}</p>
+            </div>
+          </div>
+          <div>
+            {canEditStaff && (
+              <TeamEditModal team={team} />
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-7">
         <div className="md:col-span-5 space-y-6">
-          <Card className="overflow-hidden bg-card border-border/40">
-            <div className="h-48 w-full relative bg-gradient-to-r from-blue-600 to-blue-800">
-              {formattedTeam?.banner_url ? (
-                <Image src={formattedTeam.banner_url} alt="Team banner" fill className="object-cover" />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Building2 className="h-16 w-16 text-blue-300/50" />
-                </div>
-              )}
-            </div>
-            <CardContent className="pt-6">
-              <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-                <div className="relative -mt-16 md:-mt-24">
-                  <Avatar className="h-24 w-24 border-4 border-background">
-                    <AvatarImage src={formattedTeam?.logo_url || ""} alt={formattedTeam?.name} />
-                    <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                      {formattedTeam?.name?.substring(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-                <div className="space-y-1">
-                  <h2 className="text-2xl font-bold">{formattedTeam?.name}</h2>
-                  <p className="text-muted-foreground">{formattedTeam?.description}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           <Tabs defaultValue="members" className="w-full">
-            <TabsList className="grid w-full md:w-auto grid-cols-2 md:inline-flex">
-              <TabsTrigger value="members">Team Members</TabsTrigger>
+            <TabsList className="grid w-full md:w-auto grid-cols-3 md:inline-flex">
+              <TabsTrigger value="members">Members</TabsTrigger>
               <TabsTrigger value="squads">Squads</TabsTrigger>
+              <TabsTrigger value="feed">Activity Feed</TabsTrigger>
             </TabsList>
+
             <TabsContent value="members" className="mt-4">
-              <Card className="bg-card border-border/40">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Members
-                  </CardTitle>
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Team Members
+                    </CardTitle>
+                    <Button size="sm" variant="outline" asChild>
+                      <a href="/dashboard/invitations">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Member
+                      </a>
+                    </Button>
+                  </div>
                   <CardDescription>All members in your team</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {uniqueMembers.length > 0 ? (
-                      <div className="grid gap-4 md:grid-cols-2">
-                        {uniqueMembers.map((member) => (
-                          <div
-                            key={member.id}
-                            className="flex items-center gap-3 p-3 rounded-lg border border-border/40"
-                          >
-                            <Avatar>
-                              <AvatarFallback>{member.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium truncate">{member.name}</p>
-                              <p className="text-xs text-muted-foreground truncate">{member.email}</p>
-                              {member.teamRole && (
-                                <Badge variant="outline" className="mt-1">
-                                  {member.teamRole}
-                                </Badge>
-                              )}
-                              {member.squad && (
-                                <p className="text-xs text-muted-foreground truncate mt-1">Squad: {member.squad}</p>
-                              )}
-                            </div>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {uniqueMembers.map((member) => (
+                      <div key={member.id} className="flex items-center gap-3 p-3 rounded-lg border">
+                        <Avatar>
+                          <AvatarImage src={member.avatar_url || ""} alt={member.name} />
+                          <AvatarFallback>{member.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{member.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {member.teamRole && (
+                              <Badge variant="outline" className="text-xs capitalize">
+                                {member.teamRole.replace("_", " ")}
+                              </Badge>
+                            )}
+                            {member.squad && (
+                              <Badge variant="secondary" className="text-xs">
+                                {member.squad}
+                              </Badge>
+                            )}
                           </div>
-                        ))}
+                        </div>
                       </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No members found</p>
-                    )}
+                    ))}
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
+
             <TabsContent value="squads" className="mt-4">
-              <Card className="bg-card border-border/40">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5" />
-                    Squads
-                  </CardTitle>
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="flex items-center gap-2">
+                      <Shield className="h-5 w-5" />
+                      Squads
+                    </CardTitle>
+                    <Button size="sm" variant="outline" asChild>
+                      <a href="/dashboard/squads">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Squad
+                      </a>
+                    </Button>
+                  </div>
                   <CardDescription>Teams within your team</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {formattedSquads.length > 0 ? (
-                      <div className="grid gap-4 md:grid-cols-2">
-                        {formattedSquads.map((squad) => (
-                          <div
-                            key={squad.id}
-                            className="p-4 rounded-lg border border-border/40"
-                          >
-                            <h3 className="font-medium">{squad.name}</h3>
-                            <div className="mt-4 space-y-2">
-                              <h4 className="text-sm font-medium">Members</h4>
-                              <div className="space-y-2">
-                                {squad.members.length > 0 ? (
-                                  squad.members.map((member) => (
-                                    <div
-                                      key={member.user.id}
-                                      className="flex items-center gap-2"
-                                    >
-                                      <Avatar className="h-6 w-6">
-                                        <AvatarFallback className="text-xs">
-                                          {member.user.name.substring(0, 2).toUpperCase()}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <span className="text-sm">{member.user.name}</span>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <p className="text-sm text-muted-foreground">No members</p>
-                                )}
-                              </div>
-                            </div>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {squads?.map((squad) => (
+                      <Card key={squad.id} className="border-border/40">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">{squad.name}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <h4 className="text-sm font-medium mb-2">Members</h4>
+                          <div className="space-y-2">
+                            {squad.members.length > 0 ? (
+                              squad.members.map((member) => (
+                                <div key={member.user.id} className="flex items-center gap-2">
+                                  <Avatar className="h-6 w-6">
+                                    <AvatarImage src={member.user.avatar_url || ""} alt={member.user.name} />
+                                    <AvatarFallback className="text-xs">
+                                      {member.user.name.substring(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-sm">{member.user.name}</span>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-sm text-muted-foreground">No members</p>
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No squads found</p>
-                    )}
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="feed" className="mt-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5" />
+                    Activity Feed
+                  </CardTitle>
+                  <CardDescription>Recent team activity and updates</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TeamFeed teamId={team.id} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -293,7 +280,7 @@ export default async function TeamProfilePage() {
         </div>
 
         <div className="md:col-span-2 space-y-6">
-          <Card className="bg-card border-border/40">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <UserSquare className="h-5 w-5" />
@@ -303,29 +290,27 @@ export default async function TeamProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {formattedTeam?.president && (
+                {president && (
                   <div className="flex items-center gap-3">
                     <Avatar>
-                      <AvatarFallback>
-                        {formattedTeam.president.name.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
+                      <AvatarImage src={president.avatar_url || ""} alt={president.name} />
+                      <AvatarFallback>{president.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium">{formattedTeam.president.name}</p>
+                      <p className="font-medium">{president.name}</p>
                       <p className="text-sm text-muted-foreground">President</p>
                     </div>
                   </div>
                 )}
 
-                {formattedTeam?.vice_president && (
+                {vice_president && (
                   <div className="flex items-center gap-3">
                     <Avatar>
-                      <AvatarFallback>
-                        {formattedTeam.vice_president.name.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
+                      <AvatarImage src={vice_president.avatar_url || ""} alt={vice_president.name} />
+                      <AvatarFallback>{vice_president.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium">{formattedTeam.vice_president.name}</p>
+                      <p className="font-medium">{vice_president.name}</p>
                       <p className="text-sm text-muted-foreground">Vice President</p>
                     </div>
                   </div>
@@ -338,14 +323,13 @@ export default async function TeamProfilePage() {
                     </div>
                     <div className="space-y-2">
                       {coordinators.map((coordinator) => (
-                        <div key={coordinator.user.id} className="flex items-center gap-3">
+                        <div key={coordinator.id} className="flex items-center gap-3">
                           <Avatar>
-                            <AvatarFallback>
-                              {coordinator.user.name.substring(0, 2).toUpperCase()}
-                            </AvatarFallback>
+                            <AvatarImage src={coordinator.avatar_url || ""} alt={coordinator.name} />
+                            <AvatarFallback>{coordinator.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium">{coordinator.user.name}</p>
+                            <p className="font-medium">{coordinator.name}</p>
                             <p className="text-sm text-muted-foreground">Coordinator</p>
                           </div>
                         </div>
@@ -353,6 +337,40 @@ export default async function TeamProfilePage() {
                     </div>
                   </>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Team Stats</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">Total Members</p>
+                    <p className="text-2xl font-bold">{uniqueMembers.length}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">Squads</p>
+                    <p className="text-2xl font-bold">{squads?.length}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Created</p>
+                  <p className="text-sm">{new Date(team.created_at).toLocaleDateString("pt-BR", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}</p>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Last Activity</p>
+                  <p className="text-sm">Today at 10:30 AM</p>
+                </div>
               </div>
             </CardContent>
           </Card>

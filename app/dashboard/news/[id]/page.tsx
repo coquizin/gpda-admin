@@ -1,18 +1,17 @@
-import { notFound } from "next/navigation"
-import { requireAuth } from "@/lib/auth"
+import { notFound, useParams } from "next/navigation"
+import { getActiveTeam, getUserProfile, requireAuth } from "@/lib/auth"
 import { NewsForm } from "../news-form"
-import { createClient } from "@/app/utils/supabase/server"
+import { createClient } from "@/app/utils/supabase/client"
+import { Team } from "@/entities"
 
-interface NewsEditPageProps {
-  params: {
-    id: string
-  }
-}
 
-export default async function NewsEditPage({ params }: NewsEditPageProps) {
+export default async function NewsEditPage() {
   await requireAuth()
-  const { id } = params
-  const supabase = await createClient()
+  const { id } = useParams<{ id: string}>()
+  const supabase = createClient()
+  const session = await requireAuth()
+  const profile = await getUserProfile()
+  const activeTeam = await getActiveTeam()
   // Get news data
   const { data: news } = await supabase.from("news").select("*").eq("id", id).single()
 
@@ -20,8 +19,18 @@ export default async function NewsEditPage({ params }: NewsEditPageProps) {
     notFound()
   }
 
-  // Get all teams for dropdown
-  const { data: teams } = await supabase.from("teams").select("id, name").order("name")
+  let teams: Team[] = []
+
+  if (profile?.is_admin) {
+    // Admins can post to any team
+    const { data } = await supabase.from("teams").select("id, name, description, banner_url, logo_url, team_color, created_at").order("name")
+
+    teams = data || []
+  } else {
+      if (activeTeam) {
+        teams = [activeTeam]
+      }
+  }
 
   return (
     <div className="space-y-6 px-4 lg:px-6 py-6">

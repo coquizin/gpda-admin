@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { getUserProfile } from "@/lib/auth"
+import { getActiveTeam, getUserProfile } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -7,40 +7,42 @@ import { PlusCircle } from "lucide-react"
 import { createClient } from "@/app/utils/supabase/client"
 
 export default async function ProjectsPage() {
-  const supabase = createClient()
-  const profile = await getUserProfile()
-
-  // Get user's team ID if they belong to a squad
-  let teamIds: string[] = []
-
-  if (profile?.is_admin) {
-    // Admins can see all projects
-    const { data: teams } = await supabase.from("teams").select("id")
-
-    teamIds = teams?.map((team) => team.id) || []
-  } else if (profile?.squad_id) {
-    // Get the team ID for the user's squad
-    const { data: squad } = await supabase.from("squads").select("team_id").eq("id", profile.squad_id).single()
-
-    if (squad) {
-      teamIds = [squad.team_id]
-    }
-  }
-
-  // Get projects for the user's team(s)
-  const { data: projects } = await supabase
-    .from("projects")
-    .select(`
-      *,
-      team:team_id (
-        name
-      )
-    `)
-    .in("team_id", teamIds)
-    .order("created_at", { ascending: false })
+   const supabase = createClient()
+   const profile = await getUserProfile()
+   const activeTeam = await getActiveTeam()
+ 
+   // Get user's team ID if they belong to a squad
+   let teamIds: string[] = []
+ 
+   if (profile?.is_admin) {
+     // Admins can see all news
+     const { data: teams } = await supabase.from("teams").select("id")
+     teamIds = teams?.map((team) => team.id) || []
+   } else {
+     if (activeTeam) {
+       teamIds = [activeTeam.id]
+     }
+   }
+ 
+   // Get projects for the user's team(s)
+   const { data: projects, error } = await supabase
+   .from("projects")
+   .select(`
+     *,
+     team:team_id (
+       id,
+       name
+     ),
+     squad:squad_id (
+       id,
+       name
+     )
+   `)
+   .in("team_id", teamIds)
+   .order("created_at", { ascending: false });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 lg:px-6 py-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
@@ -58,8 +60,10 @@ export default async function ProjectsPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Image</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Team</TableHead>
+              <TableHead>Squad</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -69,8 +73,12 @@ export default async function ProjectsPage() {
             {projects && projects.length > 0 ? (
               projects.map((project) => (
                 <TableRow key={project.id}>
+                  <TableCell>
+                    <img src={project.image_url} alt={project.title} className="h-12 w-12 object-cover rounded-lg" />
+                  </TableCell>
                   <TableCell className="font-medium">{project.name}</TableCell>
                   <TableCell>{project.team?.name || "—"}</TableCell>
+                  <TableCell>{project.squad?.name || "—"}</TableCell>
                   <TableCell>
                     <Badge
                       variant={
